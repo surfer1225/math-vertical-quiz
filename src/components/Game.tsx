@@ -8,6 +8,7 @@ import ProgressBar from "./ProgressBar";
 import VerticalMath, { VerticalMathHandle } from "./VerticalMath";
 import StreakBar from "./StreakBar";
 import LevelUpOverlay from "./LevelUpOverlay";
+import Sidebar from "./Sidebar";
 
 type Phase = "answering" | "feedback" | "levelUp";
 
@@ -21,6 +22,7 @@ export default function Game() {
   const [scorePopValue, setScorePopValue] = useState(0);
   const [comboKey, setComboKey] = useState(0);
   const [comboCount, setComboCount] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const mathRef = useRef<VerticalMathHandle>(null);
 
   const worldConfig = getWorldConfig(state.world);
@@ -139,6 +141,15 @@ export default function Game() {
     });
   }, [state.world, resetForNewQuestion]);
 
+  const handleSelectLevel = useCallback((worldNum: number, levelNum: number) => {
+    resetForNewQuestion(worldNum, levelNum, {
+      world: worldNum,
+      level: levelNum,
+      questionInLevel: 0,
+      levelCorrect: 0,
+    });
+  }, [resetForNewQuestion]);
+
   const handleButtonClick = () => {
     if (phase === "answering") {
       mathRef.current?.submit();
@@ -165,6 +176,14 @@ export default function Game() {
 
   return (
     <>
+      <Sidebar
+        currentWorld={state.world}
+        currentLevel={state.level}
+        open={sidebarOpen}
+        onToggle={() => setSidebarOpen((o) => !o)}
+        onSelect={handleSelectLevel}
+      />
+
       <TopBar
         world={state.world}
         worldName={worldConfig.name}

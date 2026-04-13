@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>竖式数学闯关 - 原型</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --primary: #6C5CE7;
+    --primary-light: #A29BFE;
+    --success: #00B894;
+    --success-light: #55EFC4;
+    --danger: #FF6B6B;
+    --warning: #FDCB6E;
+    --bg: #F8F9FE;
+    --card: #FFFFFF;
+    --text: #2D3436;
+    --text-light: #636E72;
+    --shadow: 0 8px 32px rgba(108, 92, 231, 0.12);
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    color: var(--text);
+  }
+
+  /* ===== TOP BAR ===== */
+  .top-bar {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .level-badge {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: 800;
+    font-size: 16px;
+    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+  }
+
+  .stats {
+    display: flex;
+    gap: 16px;
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--primary);
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-light);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ===== PROGRESS BAR ===== */
+  .progress-container {
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 24px;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-light);
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 12px;
+    background: #E8E5F8;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    border-radius: 10px;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 8px;
+    right: 8px;
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 4px;
+  }
+
+  .stars-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    padding: 0 2px;
+  }
+
+  .star-marker {
+    font-size: 16px;
+    opacity: 0.3;
+    transition: all 0.3s;
+  }
+
+  .star-marker.earned {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+
+  /* ===== MAIN CARD ===== */
+  .card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 32px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light), var(--success));
+  }
+
+  .question-number {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-light);
+    margin-bottom: 24px;
+  }
+
+  /* ===== VERTICAL MATH ===== */
+  .vertical-math {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin: 0 auto;
+    width: fit-content;
+    min-width: 200px;
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: 8px;
+    position: relative;
+  }
+
+  .math-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
+    padding: 4px 0;
+    position: relative;
+  }
+
+  .operator {
+    position: absolute;
+    left: -10px;
+    font-size: 36px;
+    color: var(--primary);
+    font-weight: 900;
+  }
+
+  .number {
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+
+  .divider {
+    width: calc(100% + 30px);
+    height: 4px;
+    background: var(--text);
+    border-radius: 2px;
+    margin: 8px -15px;
+  }
+
+  /* ===== ANSWER INPUT ===== */
+  .answer-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    min-height: 60px;
+  }
+
+  .digit-input {
+    width: 52px;
+    height: 64px;
+    border: 3px dashed var(--primary-light);
+    border-radius: 12px;
+    text-align: center;
+    font-size: 42px;
+    font-weight: 800;
+    font-family: 'Nunito', sans-serif;
+    color: var(--primary);
+    background: #F3F0FF;
+    outline: none;
+    transition: all 0.2s;
+    caret-color: var(--primary);
+  }
+
+  .digit-input:focus {
+    border-color: var(--primary);
+    border-style: solid;
+    background: #EDE9FE;
+    box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.15);
+    transform: scale(1.05);
+  }
+
+  .digit-input.correct {
+    border-color: var(--success);
+    background: #E6FFF8;
+    color: var(--success);
+    border-style: solid;
+  }
+
+  .digit-input.wrong {
+    border-color: var(--danger);
+    background: #FFE8E8;
+    color: var(--danger);
+    border-style: solid;
+    animation: shake 0.4s ease;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  /* ===== CARRY/BORROW INDICATORS ===== */
+  .carry-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-bottom: 4px;
+    min-height: 24px;
+  }
+
+  .carry-digit {
+    width: 52px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--danger);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .carry-digit.visible {
+    opacity: 1;
+  }
+
+  /* ===== SUBMIT BUTTON ===== */
+  .submit-btn {
+    display: block;
+    width: 100%;
+    margin-top: 28px;
+    padding: 16px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    font-size: 18px;
+    font-weight: 800;
+    font-family: 'Nunito', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+  }
+
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
+  }
+
+  .submit-btn:active {
+    transform: translateY(0);
+  }
+
+  .submit-btn.next-btn {
+    background: linear-gradient(135deg, var(--success), var(--success-light));
+    box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+  }
+
+  /* ===== FEEDBACK ===== */
+  .feedback {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 18px;
+    font-weight: 800;
+    min-height: 28px;
+    transition: all 0.3s;
+  }
+
+  .feedback.correct {
+    color: var(--success);
+  }
+
+  .feedback.wrong {
+    color: var(--danger);
+  }
+
+  /* ===== STREAK ===== */
+  .streak-bar {
+    width: 100%;
+    max-width: 500px;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  .streak-icon {
+    font-size: 22px;
+  }
+
+  .streak-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .streak-dots {
+    display: flex;
+    gap: 5px;
+  }
+
+  .streak-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #E8E5F8;
+    transition: all 0.3s;
+  }
+
+  .streak-dot.active {
+    background: var(--warning);
+    box-shadow: 0 0 8px rgba(253, 203, 110, 0.5);
+  }
+
+  /* ===== LEVEL UP OVERLAY ===== */
+  .overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+  }
+
+  .overlay.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .level-up-card {
+    background: white;
+    border-radius: 28px;
+    padding: 40px;
+    text-align: center;
+    max-width: 360px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    animation: popIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .level-up-icon {
+    font-size: 64px;
+    margin-bottom: 12px;
+  }
+
+  .level-up-title {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+
+  .level-up-desc {
+    font-size: 16px;
+    color: var(--text-light);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .level-up-reward {
+    font-size: 14px;
+    color: var(--warning);
+    font-weight: 800;
+    margin-bottom: 24px;
+  }
+
+  .level-up-btn {
+    padding: 14px 40px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    font-size: 17px;
+    font-weight: 800;
+    font-family: 'Nunito', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+    transition: all 0.2s;
+  }
+
+  .level-up-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  /* ===== CONFETTI ===== */
+  .confetti-piece {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    z-index: 200;
+    pointer-events: none;
+  }
+
+  /* ===== COMBO TEXT ===== */
+  .combo-text {
+    position: fixed;
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--warning);
+    z-index: 50;
+    pointer-events: none;
+    animation: comboFloat 1s ease forwards;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  @keyframes comboFloat {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
+  }
+
+  /* ===== SCORE POP ===== */
+  .score-pop {
+    position: absolute;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--success);
+    pointer-events: none;
+    animation: scorePop 0.8s ease forwards;
+  }
+
+  @keyframes scorePop {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-40px); }
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 400px) {
+    .vertical-math { font-size: 38px; }
+    .digit-input { width: 44px; height: 54px; font-size: 34px; }
+    .carry-digit { width: 44px; }
+    .card { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="top-bar">
+  <div class="level-badge" id="levelBadge">Level 1</div>
+  <div class="stats">
+    <div class="stat-item">
+      <div class="stat-value" id="scoreValue">0</div>
+      <div class="stat-label">得分</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value" id="correctCount">0</div>
+      <div class="stat-label">正确</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value" id="accuracyValue">-</div>
+      <div class="stat-label">正确率</div>
+    </div>
+  </div>
+</div>
+
+<!-- Progress Bar -->
+<div class="progress-container">
+  <div class="progress-header">
+    <span id="progressLabel">闯关进度</span>
+    <span id="progressText">0 / 5</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+  </div>
+  <div class="stars-row" id="starsRow">
+    <span class="star-marker">&#9733;</span>
+    <span class="star-marker">&#9733;</span>
+    <span class="star-marker">&#9733;</span>
+    <span class="star-marker">&#9733;</span>
+    <span class="star-marker">&#9733;</span>
+  </div>
+</div>
+
+<!-- Main Card -->
+<div class="card" id="mainCard">
+  <div class="question-number" id="questionLabel">第 1 题</div>
+
+  <!-- Carry indicators -->
+  <div class="vertical-math" id="mathArea">
+    <div class="carry-row" id="carryRow">
+      <div class="carry-digit" id="carry1"></div>
+      <div class="carry-digit" id="carry0"></div>
+    </div>
+    <div class="math-row">
+      <span class="number" id="num1">47</span>
+    </div>
+    <div class="math-row">
+      <span class="operator" id="opSign">+</span>
+      <span class="number" id="num2">38</span>
+    </div>
+    <div class="divider"></div>
+    <div class="answer-row" id="answerRow">
+      <input class="digit-input" id="digitHundred" maxlength="1" inputmode="numeric" style="display:none;">
+      <input class="digit-input" id="digitTens" maxlength="1" inputmode="numeric">
+      <input class="digit-input" id="digitOnes" maxlength="1" inputmode="numeric">
+    </div>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+  <button class="submit-btn" id="submitBtn" onclick="checkAnswer()">确认答案</button>
+</div>
+
+<!-- Streak -->
+<div class="streak-bar">
+  <span class="streak-icon">&#128293;</span>
+  <span class="streak-text">连续答对</span>
+  <div class="streak-dots" id="streakDots">
+    <div class="streak-dot"></div>
+    <div class="streak-dot"></div>
+    <div class="streak-dot"></div>
+    <div class="streak-dot"></div>
+    <div class="streak-dot"></div>
+  </div>
+</div>
+
+<!-- Level Up Overlay -->
+<div class="overlay" id="levelOverlay">
+  <div class="level-up-card">
+    <div class="level-up-icon">&#127942;</div>
+    <div class="level-up-title" id="levelUpTitle">升级到 Level 2!</div>
+    <div class="level-up-desc" id="levelUpDesc">太棒了! 你已完成5道题</div>
+    <div class="level-up-reward" id="levelUpReward">&#11088; 解锁: 更大的数字挑战!</div>
+    <button class="level-up-btn" onclick="startNextLevel()">开始下一关 &#10132;</button>
+  </div>
+</div>
+
+<script>
+  // ===== GAME STATE =====
+  let state = {
+    level: 1,
+    score: 0,
+    totalCorrect: 0,
+    totalAttempted: 0,
+    questionInLevel: 0,
+    questionsPerLevel: 5,
+    streak: 0,
+    num1: 0,
+    num2: 0,
+    op: '+',
+    answer: 0,
+    answered: false,
+  };
+
+  // ===== LEVEL CONFIG =====
+  const levels = [
+    { name: 'Level 1', range: [10, 50], ops: ['+'], desc: '两位数加法（无进位）', noCarry: true },
+    { name: 'Level 2', range: [10, 60], ops: ['+'], desc: '两位数加法（有进位）', noCarry: false },
+    { name: 'Level 3', range: [20, 99], ops: ['-'], desc: '两位数减法（无借位）', noBorrow: true },
+    { name: 'Level 4', range: [30, 99], ops: ['-'], desc: '两位数减法（有借位）', noBorrow: false },
+    { name: 'Level 5', range: [20, 99], ops: ['+', '-'], desc: '加减法混合挑战' },
+  ];
+
+  // ===== GENERATE QUESTION =====
+  function generateQuestion() {
+    const cfg = levels[Math.min(state.level - 1, levels.length - 1)];
+    const op = cfg.ops[Math.floor(Math.random() * cfg.ops.length)];
+    let a, b, ans;
+
+    do {
+      a = randInt(cfg.range[0], cfg.range[1]);
+      b = randInt(cfg.range[0], Math.min(a, cfg.range[1]));
+      if (op === '+') {
+        ans = a + b;
+        // noCarry: ones digits must sum < 10
+        if (cfg.noCarry && (a % 10) + (b % 10) >= 10) continue;
+        break;
+      } else {
+        if (a < b) [a, b] = [b, a];
+        ans = a - b;
+        // noBorrow: ones digit of a >= ones digit of b
+        if (cfg.noBorrow && (a % 10) < (b % 10)) continue;
+        break;
+      }
+    } while (true);
+
+    state.num1 = a;
+    state.num2 = b;
+    state.op = op;
+    state.answer = ans;
+    state.answered = false;
+
+    renderQuestion();
+  }
+
+  function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  // ===== RENDER =====
+  function renderQuestion() {
+    const n1 = String(state.num1).padStart(2, ' ');
+    const n2 = String(state.num2).padStart(2, ' ');
+
+    document.getElementById('num1').textContent = state.num1;
+    document.getElementById('num2').textContent = state.num2;
+    document.getElementById('opSign').textContent = state.op === '+' ? '+' : '\u2212';
+
+    // answer can be 2 or 3 digits
+    const needHundred = state.answer >= 100;
+    const dh = document.getElementById('digitHundred');
+    dh.style.display = needHundred ? 'block' : 'none';
+    dh.value = '';
+
+    const dt = document.getElementById('digitTens');
+    const do_ = document.getElementById('digitOnes');
+    dt.value = '';
+    do_.value = '';
+
+    // reset styles
+    [dh, dt, do_].forEach(el => {
+      el.classList.remove('correct', 'wrong');
+    });
+
+    // carry indicators
+    document.getElementById('carry0').textContent = '';
+    document.getElementById('carry1').textContent = '';
+    document.getElementById('carry0').classList.remove('visible');
+    document.getElementById('carry1').classList.remove('visible');
+
+    // feedback
+    document.getElementById('feedback').textContent = '';
+    document.getElementById('feedback').className = 'feedback';
+
+    // button
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = '确认答案';
+    btn.className = 'submit-btn';
+    btn.onclick = checkAnswer;
+
+    // question label
+    document.getElementById('questionLabel').textContent =
+      `第 ${state.questionInLevel + 1} 题`;
+
+    // focus first input
+    setTimeout(() => {
+      if (needHundred) dh.focus();
+      else dt.focus();
+    }, 100);
+  }
+
+  // ===== AUTO-ADVANCE INPUTS =====
+  document.getElementById('digitHundred').addEventListener('input', function() {
+    if (this.value.length === 1) document.getElementById('digitTens').focus();
+  });
+  document.getElementById('digitTens').addEventListener('input', function() {
+    if (this.value.length === 1) document.getElementById('digitOnes').focus();
+  });
+  document.getElementById('digitOnes').addEventListener('input', function() {
+    if (this.value.length === 1) {
+      // auto submit on last digit
+    }
+  });
+
+  // Keyboard navigation: Enter to submit, Left/Right arrows to move between digits
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      document.getElementById('submitBtn').click();
+      return;
+    }
+
+    const inputs = [
+      document.getElementById('digitHundred'),
+      document.getElementById('digitTens'),
+      document.getElementById('digitOnes')
+    ].filter(el => el.style.display !== 'none');
+
+    const currentIndex = inputs.indexOf(document.activeElement);
+    if (currentIndex === -1) return;
+
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (currentIndex > 0) inputs[currentIndex - 1].focus();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (currentIndex < inputs.length - 1) inputs[currentIndex + 1].focus();
+    }
+  });
+
+  // ===== CHECK ANSWER =====
+  function checkAnswer() {
+    if (state.answered) return;
+
+    const dh = document.getElementById('digitHundred');
+    const dt = document.getElementById('digitTens');
+    const do_ = document.getElementById('digitOnes');
+
+    const hundredVal = dh.style.display !== 'none' ? (dh.value || '') : '';
+    const tensVal = dt.value || '';
+    const onesVal = do_.value || '';
+
+    const userAnswer = parseInt(hundredVal + tensVal + onesVal, 10);
+
+    if (isNaN(userAnswer)) {
+      document.getElementById('feedback').textContent = '请填写所有数字!';
+      document.getElementById('feedback').className = 'feedback wrong';
+      return;
+    }
+
+    state.totalAttempted++;
+    state.answered = true;
+
+    const isCorrect = userAnswer === state.answer;
+
+    if (isCorrect) {
+      state.totalCorrect++;
+      state.streak++;
+
+      // score: base 10 + streak bonus
+      const bonus = Math.min(state.streak - 1, 4) * 5;
+      const points = 10 + bonus;
+      state.score += points;
+
+      [dh, dt, do_].forEach(el => el.classList.add('correct'));
+      document.getElementById('feedback').textContent =
+        state.streak > 1 ? `太棒了! 连续 ${state.streak} 题 &#127775; +${points}分` : `正确! &#127881; +${points}分`;
+      document.getElementById('feedback').className = 'feedback correct';
+
+      // show carry/borrow hints for learning
+      showCarryHints();
+
+      // show score pop
+      showScorePop(points);
+
+      // combo text
+      if (state.streak >= 3) showCombo(state.streak);
+
+      state.questionInLevel++;
+      updateProgress();
+      updateStats();
+      updateStreak();
+
+      // check level complete
+      if (state.questionInLevel >= state.questionsPerLevel) {
+        const btn = document.getElementById('submitBtn');
+        btn.textContent = '查看结果 &#127942;';
+        btn.className = 'submit-btn next-btn';
+        btn.onclick = showLevelUp;
+      } else {
+        const btn = document.getElementById('submitBtn');
+        btn.textContent = '下一题 &#10132;';
+        btn.className = 'submit-btn next-btn';
+        btn.onclick = generateQuestion;
+      }
+    } else {
+      state.streak = 0;
+      [dh, dt, do_].forEach(el => el.classList.add('wrong'));
+
+      // show correct answer
+      const ansStr = String(state.answer);
+      document.getElementById('feedback').innerHTML =
+        `再想想哦! 正确答案是 <strong>${state.answer}</strong>`;
+      document.getElementById('feedback').className = 'feedback wrong';
+
+      showCarryHints();
+      updateStats();
+      updateStreak();
+
+      const btn = document.getElementById('submitBtn');
+      btn.textContent = '下一题 &#10132;';
+      btn.className = 'submit-btn';
+      btn.onclick = () => {
+        state.questionInLevel++;
+        if (state.questionInLevel >= state.questionsPerLevel) {
+          showLevelUp();
+        } else {
+          generateQuestion();
+        }
+        updateProgress();
+      };
+    }
+  }
+
+  // ===== CARRY HINTS =====
+  function showCarryHints() {
+    if (state.op === '+') {
+      const onesSum = (state.num1 % 10) + (state.num2 % 10);
+      if (onesSum >= 10) {
+        const c0 = document.getElementById('carry1');
+        c0.textContent = '1';
+        c0.classList.add('visible');
+      }
+    }
+  }
+
+  // ===== EFFECTS =====
+  function showScorePop(points) {
+    const pop = document.createElement('div');
+    pop.className = 'score-pop';
+    pop.textContent = `+${points}`;
+    const card = document.getElementById('mainCard');
+    pop.style.right = '20px';
+    pop.style.top = '20px';
+    card.style.position = 'relative';
+    card.appendChild(pop);
+    setTimeout(() => pop.remove(), 800);
+  }
+
+  function showCombo(count) {
+    const combo = document.createElement('div');
+    combo.className = 'combo-text';
+    combo.textContent = `${count}x COMBO!`;
+    combo.style.left = '50%';
+    combo.style.top = '40%';
+    combo.style.transform = 'translateX(-50%)';
+    document.body.appendChild(combo);
+    setTimeout(() => combo.remove(), 1000);
+  }
+
+  function launchConfetti() {
+    const colors = ['#6C5CE7', '#A29BFE', '#00B894', '#55EFC4', '#FDCB6E', '#FF6B6B', '#FD79A8'];
+    for (let i = 0; i < 50; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.top = '-10px';
+      piece.style.width = (6 + Math.random() * 8) + 'px';
+      piece.style.height = (6 + Math.random() * 8) + 'px';
+      piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      document.body.appendChild(piece);
+
+      const duration = 1000 + Math.random() * 2000;
+      const xDrift = (Math.random() - 0.5) * 200;
+
+      piece.animate([
+        { transform: `translateY(0) translateX(0) rotate(0deg)`, opacity: 1 },
+        { transform: `translateY(100vh) translateX(${xDrift}px) rotate(${360 + Math.random() * 360}deg)`, opacity: 0 }
+      ], { duration, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' });
+
+      setTimeout(() => piece.remove(), duration);
+    }
+  }
+
+  // ===== UI UPDATES =====
+  function updateProgress() {
+    const pct = (state.questionInLevel / state.questionsPerLevel) * 100;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressText').textContent =
+      `${state.questionInLevel} / ${state.questionsPerLevel}`;
+
+    // stars
+    const stars = document.querySelectorAll('.star-marker');
+    stars.forEach((s, i) => {
+      if (i < state.questionInLevel) s.classList.add('earned');
+      else s.classList.remove('earned');
+    });
+  }
+
+  function updateStats() {
+    document.getElementById('scoreValue').textContent = state.score;
+    document.getElementById('correctCount').textContent = state.totalCorrect;
+    document.getElementById('accuracyValue').textContent =
+      state.totalAttempted > 0
+        ? Math.round((state.totalCorrect / state.totalAttempted) * 100) + '%'
+        : '-';
+  }
+
+  function updateStreak() {
+    const dots = document.querySelectorAll('.streak-dot');
+    dots.forEach((d, i) => {
+      if (i < state.streak) d.classList.add('active');
+      else d.classList.remove('active');
+    });
+  }
+
+  // ===== LEVEL UP =====
+  function showLevelUp() {
+    const cfg = levels[Math.min(state.level, levels.length - 1)];
+    document.getElementById('levelUpTitle').textContent = `升级到 Level ${state.level + 1}!`;
+    document.getElementById('levelUpDesc').textContent =
+      `太棒了! 你在 Level ${state.level} 答对了 ${state.totalCorrect} 题`;
+    document.getElementById('levelUpReward').textContent =
+      `\u2B50 下一关: ${cfg.desc}`;
+    document.getElementById('levelOverlay').classList.add('show');
+    launchConfetti();
+  }
+
+  function startNextLevel() {
+    state.level++;
+    state.questionInLevel = 0;
+    document.getElementById('levelOverlay').classList.remove('show');
+    document.getElementById('levelBadge').textContent = `Level ${state.level}`;
+
+    const cfg = levels[Math.min(state.level - 1, levels.length - 1)];
+    document.getElementById('progressLabel').textContent = cfg.desc;
+
+    // reset progress stars
+    document.querySelectorAll('.star-marker').forEach(s => s.classList.remove('earned'));
+
+    updateProgress();
+    generateQuestion();
+  }
+
+  // ===== INIT =====
+  const cfg = levels[0];
+  document.getElementById('progressLabel').textContent = cfg.desc;
+  generateQuestion();
+</script>
+
+</body>
+</html>

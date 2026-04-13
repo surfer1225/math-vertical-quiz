@@ -515,6 +515,122 @@ body {
   opacity: 0.6;
 }
 
+/* ===== WORD PROBLEM ===== */
+.word-problem {
+  padding: 8px 0;
+}
+
+.wp-text {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.8;
+  color: var(--text);
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.wp-hint-area {
+  margin-bottom: 16px;
+}
+
+.wp-hint-btn {
+  border: 2px dashed var(--warning);
+  background: #FFFDF0;
+  color: #B8860B;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wp-hint-btn:hover {
+  background: #FFF8DC;
+  transform: translateY(-1px);
+}
+
+.wp-hint {
+  padding: 10px 14px;
+  background: #FFFDF0;
+  border-left: 4px solid var(--warning);
+  border-radius: 0 8px 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #8B7500;
+  line-height: 1.6;
+}
+
+.wp-answer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.wp-label {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.wp-answer-input {
+  flex: 1;
+  max-width: 160px;
+  height: 52px;
+  border: 3px dashed var(--primary-light);
+  border-radius: 12px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'Nunito', sans-serif;
+  color: var(--primary);
+  background: #F3F0FF;
+  outline: none;
+  transition: all 0.2s;
+  -moz-appearance: textfield;
+}
+
+.wp-answer-input::-webkit-outer-spin-button,
+.wp-answer-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.wp-answer-input:focus {
+  border-color: var(--primary);
+  border-style: solid;
+  background: #EDE9FE;
+  box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.15);
+}
+
+.wp-answer-input.correct {
+  border-color: var(--success);
+  background: #E6FFF8;
+  color: var(--success);
+  border-style: solid;
+}
+
+.wp-answer-input.wrong {
+  border-color: var(--danger);
+  background: #FFE8E8;
+  color: var(--danger);
+  border-style: solid;
+  animation: shake 0.4s ease;
+}
+
+.wp-answer-input::placeholder {
+  color: var(--primary-light);
+  opacity: 0.5;
+}
+
+.wp-unit {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-light);
+}
+
 /* ===== SIDEBAR ===== */
 .sidebar-toggle {
   position: fixed;

@@ -281,9 +281,54 @@ const world7: WorldConfig = {
   ],
 };
 
+// ===== WORD PROBLEM WORLDS =====
+
+import {
+  chickenRabbit, sumDifference, ageProblem, treePlanting,
+  surplusDeficit, workBackwards, findPattern, cleverCalc,
+} from "./wordProblems";
+
+const world8: WorldConfig = {
+  id: 8, name: "\u534E\u7F57\u5E9A\u5965\u6570", emoji: "\u{1F9E0}",
+  levels: [
+    {
+      id: "8-1", name: "Level 8-1", desc: "\u9E21\u5154\u540C\u7B3C", op: "+",
+      generate: chickenRabbit,
+    },
+    {
+      id: "8-2", name: "Level 8-2", desc: "\u548C\u5DEE\u95EE\u9898", op: "+",
+      generate: sumDifference,
+    },
+    {
+      id: "8-3", name: "Level 8-3", desc: "\u5E74\u9F84\u95EE\u9898", op: "+",
+      generate: ageProblem,
+    },
+    {
+      id: "8-4", name: "Level 8-4", desc: "\u690D\u6811\u95EE\u9898", op: "+",
+      generate: treePlanting,
+    },
+    {
+      id: "8-5", name: "Level 8-5", desc: "\u76C8\u4E8F\u95EE\u9898", op: "+",
+      generate: surplusDeficit,
+    },
+    {
+      id: "8-6", name: "Level 8-6", desc: "\u8FD8\u539F\u95EE\u9898", op: "+",
+      generate: workBackwards,
+    },
+    {
+      id: "8-7", name: "Level 8-7", desc: "\u627E\u89C4\u5F8B", op: "+",
+      generate: findPattern,
+    },
+    {
+      id: "8-8", name: "Level 8-8", desc: "\u5DE7\u7B97", op: "+",
+      generate: cleverCalc,
+    },
+  ],
+};
+
 // ===== EXPORTS =====
 
-export const WORLDS: WorldConfig[] = [world1, world2, world3, world4, world5, world6, world7];
+export const WORLDS: WorldConfig[] = [world1, world2, world3, world4, world5, world6, world7, world8];
 export const QUESTIONS_PER_LEVEL = 5;
 
 export function getWorldConfig(worldNum: number): WorldConfig {

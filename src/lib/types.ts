@@ -15,6 +15,9 @@ export interface GameState {
   op: Op;
   answer: number;
   remainder: number;   // for division with remainder
+  wordProblem?: string;
+  hint?: string;
+  unit?: string;
   answered: boolean;
 }
 
@@ -32,6 +35,9 @@ export interface QuestionResult {
   op: Op;
   answer: number;
   remainder: number;
+  wordProblem?: string;  // if set, render as word problem instead of vertical math
+  hint?: string;         // optional hint for word problems
+  unit?: string;         // answer unit, e.g. "只", "个", "岁"
 }
 
 export interface WorldConfig {

@@ -6,6 +6,7 @@ import { generateQuestion, calculateScore, getWorldConfig, getLevelConfig, getSt
 import TopBar from "./TopBar";
 import ProgressBar from "./ProgressBar";
 import VerticalMath, { VerticalMathHandle } from "./VerticalMath";
+import WordProblem, { WordProblemHandle } from "./WordProblem";
 import StreakBar from "./StreakBar";
 import LevelUpOverlay from "./LevelUpOverlay";
 import Sidebar from "./Sidebar";
@@ -24,6 +25,9 @@ export default function Game() {
   const [comboCount, setComboCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const mathRef = useRef<VerticalMathHandle>(null);
+  const wordRef = useRef<WordProblemHandle>(null);
+
+  const isWordProblem = !!state.wordProblem;
 
   const worldConfig = getWorldConfig(state.world);
   const levelConfig = getLevelConfig(state.world, state.level);
@@ -152,7 +156,11 @@ export default function Game() {
 
   const handleButtonClick = () => {
     if (phase === "answering") {
-      mathRef.current?.submit();
+      if (isWordProblem) {
+        wordRef.current?.submit();
+      } else {
+        mathRef.current?.submit();
+      }
     } else if (phase === "feedback") {
       if (feedbackType === "correct") {
         handleNext();
@@ -203,19 +211,33 @@ export default function Game() {
       <div className="card" style={{ position: "relative" }}>
         <div className="question-number">第 {state.questionInLevel + 1} 题</div>
 
-        <VerticalMath
-          ref={mathRef}
-          num1={state.num1}
-          num2={state.num2}
-          op={state.op}
-          answer={state.answer}
-          remainder={state.remainder}
-          answered={state.answered}
-          feedbackType={feedbackType}
-          showCarry={showCarry}
-          questionIndex={state.questionInLevel + state.level * 100 + state.world * 10000}
-          onSubmit={handleSubmit}
-        />
+        {isWordProblem ? (
+          <WordProblem
+            ref={wordRef}
+            problem={state.wordProblem!}
+            hint={state.hint}
+            unit={state.unit}
+            answer={state.answer}
+            answered={state.answered}
+            feedbackType={feedbackType}
+            questionIndex={state.questionInLevel + state.level * 100 + state.world * 10000}
+            onSubmit={handleSubmit}
+          />
+        ) : (
+          <VerticalMath
+            ref={mathRef}
+            num1={state.num1}
+            num2={state.num2}
+            op={state.op}
+            answer={state.answer}
+            remainder={state.remainder}
+            answered={state.answered}
+            feedbackType={feedbackType}
+            showCarry={showCarry}
+            questionIndex={state.questionInLevel + state.level * 100 + state.world * 10000}
+            onSubmit={handleSubmit}
+          />
+        )}
 
         {feedbackText && (
           <div className={`feedback ${feedbackType === "correct" ? "feedback-correct" : "feedback-wrong"}`}>

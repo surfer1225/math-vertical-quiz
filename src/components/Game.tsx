@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { GameState, FeedbackType } from "@/lib/types";
-import { generateQuestion, calculateScore, getLevelConfig, QUESTIONS_PER_LEVEL, initialState } from "@/lib/gameLogic";
+import { generateQuestion, calculateScore, getWorldConfig, getLevelConfig, getStarRating, QUESTIONS_PER_LEVEL, initialState } from "@/lib/gameLogic";
 import TopBar from "./TopBar";
 import ProgressBar from "./ProgressBar";
 import VerticalMath, { VerticalMathHandle } from "./VerticalMath";
@@ -23,9 +23,10 @@ export default function Game() {
   const [comboCount, setComboCount] = useState(0);
   const mathRef = useRef<VerticalMathHandle>(null);
 
-  const levelConfig = getLevelConfig(state.level);
+  const worldConfig = getWorldConfig(state.world);
+  const levelConfig = getLevelConfig(state.world, state.level);
 
-  const handleSubmit = useCallback((userAnswer: number | null) => {
+  const handleSubmit = useCallback((userAnswer: number | null, userRemainder?: number | null) => {
     if (phase !== "answering") return;
 
     if (userAnswer === null || isNaN(userAnswer)) {
@@ -34,7 +35,12 @@ export default function Game() {
       return;
     }
 
-    const isCorrect = userAnswer === state.answer;
+    const isDivision = state.op === "÷";
+    const answerCorrect = userAnswer === state.answer;
+    const remainderCorrect = !isDivision || (isDivision && state.remainder === 0)
+      ? true
+      : (userRemainder !== null && userRemainder !== undefined && userRemainder === state.remainder);
+    const isCorrect = answerCorrect && remainderCorrect;
 
     setState((prev) => {
       const next = { ...prev, totalAttempted: prev.totalAttempted + 1, answered: true };
@@ -43,6 +49,7 @@ export default function Game() {
         const newStreak = prev.streak + 1;
         const { points } = calculateScore(newStreak);
         next.totalCorrect = prev.totalCorrect + 1;
+        next.levelCorrect = prev.levelCorrect + 1;
         next.streak = newStreak;
         next.score = prev.score + points;
         next.questionInLevel = prev.questionInLevel + 1;
@@ -60,8 +67,8 @@ export default function Game() {
       setFeedbackType("correct");
       setFeedbackText(
         newStreak > 1
-          ? `太棒了! 连续 ${newStreak} 题 \u{1F31F} +${points}分`
-          : `正确! \u{1F389} +${points}分`
+          ? `太棒了! 连续 ${newStreak} 题 \uD83C\uDF1F +${points}分`
+          : `正确! \uD83C\uDF89 +${points}分`
       );
       setShowCarry(true);
       setScorePopValue(points);
@@ -73,14 +80,18 @@ export default function Game() {
       }
     } else {
       setFeedbackType("wrong");
-      setFeedbackText(`再想想哦! 正确答案是 ${state.answer}`);
+      const correctStr = isDivision && state.remainder > 0
+        ? `${state.answer}......${state.remainder}`
+        : `${state.answer}`;
+      setFeedbackText(`再想想哦! 正确答案是 ${correctStr}`);
       setShowCarry(true);
     }
 
     setPhase("feedback");
-  }, [phase, state.answer, state.streak]);
+  }, [phase, state.answer, state.streak, state.op, state.remainder]);
 
-  const resetForNewQuestion = useCallback((q: Pick<GameState, "num1" | "num2" | "op" | "answer">, extra?: Partial<GameState>) => {
+  const resetForNewQuestion = useCallback((worldNum: number, levelNum: number, extra?: Partial<GameState>) => {
+    const q = generateQuestion(worldNum, levelNum);
     setState((prev) => ({ ...prev, ...q, answered: false, ...extra }));
     setPhase("answering");
     setFeedbackType(null);
@@ -93,8 +104,8 @@ export default function Game() {
       setPhase("levelUp");
       return;
     }
-    resetForNewQuestion(generateQuestion(state.level));
-  }, [state.questionInLevel, state.level, resetForNewQuestion]);
+    resetForNewQuestion(state.world, state.level);
+  }, [state.questionInLevel, state.world, state.level, resetForNewQuestion]);
 
   const handleWrongNext = useCallback(() => {
     const nextQ = state.questionInLevel + 1;
@@ -103,13 +114,30 @@ export default function Game() {
       setPhase("levelUp");
       return;
     }
-    resetForNewQuestion(generateQuestion(state.level), { questionInLevel: nextQ });
-  }, [state.questionInLevel, state.level, resetForNewQuestion]);
+    resetForNewQuestion(state.world, state.level, { questionInLevel: nextQ });
+  }, [state.questionInLevel, state.world, state.level, resetForNewQuestion]);
+
+  const isWorldComplete = state.level >= worldConfig.levels.length
+    && state.questionInLevel >= QUESTIONS_PER_LEVEL;
 
   const handleNextLevel = useCallback(() => {
     const nextLevel = state.level + 1;
-    resetForNewQuestion(generateQuestion(nextLevel), { level: nextLevel, questionInLevel: 0 });
-  }, [state.level, resetForNewQuestion]);
+    resetForNewQuestion(state.world, nextLevel, {
+      level: nextLevel,
+      questionInLevel: 0,
+      levelCorrect: 0,
+    });
+  }, [state.world, state.level, resetForNewQuestion]);
+
+  const handleNextWorld = useCallback(() => {
+    const nextWorld = state.world + 1;
+    resetForNewQuestion(nextWorld, 1, {
+      world: nextWorld,
+      level: 1,
+      questionInLevel: 0,
+      levelCorrect: 0,
+    });
+  }, [state.world, resetForNewQuestion]);
 
   const handleButtonClick = () => {
     if (phase === "answering") {
@@ -126,16 +154,21 @@ export default function Game() {
   const buttonLabel = phase === "answering"
     ? "确认答案"
     : phase === "feedback" && state.questionInLevel >= QUESTIONS_PER_LEVEL
-      ? "查看结果 \u{1F3C6}"
-      : "下一题 \u{279E}";
+      ? "查看结果 \uD83C\uDFC6"
+      : "下一题 \u279E";
 
   const buttonClass = phase === "feedback" && feedbackType === "correct"
     ? "submit-btn next-btn"
     : "submit-btn";
 
+  const stars = getStarRating(state.levelCorrect, QUESTIONS_PER_LEVEL);
+
   return (
     <>
       <TopBar
+        world={state.world}
+        worldName={worldConfig.name}
+        worldEmoji={worldConfig.emoji}
         level={state.level}
         score={state.score}
         totalCorrect={state.totalCorrect}
@@ -157,10 +190,11 @@ export default function Game() {
           num2={state.num2}
           op={state.op}
           answer={state.answer}
+          remainder={state.remainder}
           answered={state.answered}
           feedbackType={feedbackType}
           showCarry={showCarry}
-          questionIndex={state.questionInLevel + state.level * 100}
+          questionIndex={state.questionInLevel + state.level * 100 + state.world * 10000}
           onSubmit={handleSubmit}
         />
 
@@ -187,9 +221,14 @@ export default function Game() {
 
       {phase === "levelUp" && (
         <LevelUpOverlay
+          world={state.world}
           level={state.level}
-          totalCorrect={state.totalCorrect}
-          onNext={handleNextLevel}
+          levelCorrect={state.levelCorrect}
+          questionsPerLevel={QUESTIONS_PER_LEVEL}
+          stars={stars}
+          isWorldComplete={isWorldComplete}
+          onNextLevel={handleNextLevel}
+          onNextWorld={handleNextWorld}
         />
       )}
     </>

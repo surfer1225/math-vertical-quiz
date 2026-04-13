@@ -1,19 +1,28 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import { getLevelConfig } from "@/lib/gameLogic";
+import { getWorldConfig } from "@/lib/gameLogic";
 
 interface LevelUpOverlayProps {
+  world: number;
   level: number;
-  totalCorrect: number;
-  onNext: () => void;
+  levelCorrect: number;
+  questionsPerLevel: number;
+  stars: number;
+  isWorldComplete: boolean;
+  onNextLevel: () => void;
+  onNextWorld: () => void;
 }
 
 const CONFETTI_COLORS = ["#6C5CE7", "#A29BFE", "#00B894", "#55EFC4", "#FDCB6E", "#FF6B6B", "#FD79A8"];
 
-export default function LevelUpOverlay({ level, totalCorrect, onNext }: LevelUpOverlayProps) {
-  const nextCfg = getLevelConfig(level + 1);
+function starText(n: number): string {
+  return "\u2B50".repeat(n);
+}
 
+export default function LevelUpOverlay({
+  world, level, levelCorrect, questionsPerLevel, stars, isWorldComplete, onNextLevel, onNextWorld,
+}: LevelUpOverlayProps) {
   const launchConfetti = useCallback(() => {
     for (let i = 0; i < 50; i++) {
       const piece = document.createElement("div");
@@ -28,7 +37,6 @@ export default function LevelUpOverlay({ level, totalCorrect, onNext }: LevelUpO
 
       const duration = 1000 + Math.random() * 2000;
       const xDrift = (Math.random() - 0.5) * 200;
-
       piece.animate(
         [
           { transform: "translateY(0) translateX(0) rotate(0deg)", opacity: 1 },
@@ -36,24 +44,50 @@ export default function LevelUpOverlay({ level, totalCorrect, onNext }: LevelUpO
         ],
         { duration, easing: "cubic-bezier(0.25, 0.46, 0.45, 0.94)" }
       );
-
       setTimeout(() => piece.remove(), duration);
     }
   }, []);
 
-  useEffect(() => {
-    launchConfetti();
-  }, [launchConfetti]);
+  useEffect(() => { launchConfetti(); }, [launchConfetti]);
+
+  const worldCfg = getWorldConfig(world);
+
+  if (isWorldComplete) {
+    const nextWorld = getWorldConfig(world + 1);
+    return (
+      <div className="overlay">
+        <div className="level-up-card">
+          <div className="level-up-icon">{worldCfg.emoji}</div>
+          <div className="level-up-title">{worldCfg.name} {"通关!"}</div>
+          <div className="level-up-desc">
+            {"太棒了! 答对 "}{levelCorrect}/{questionsPerLevel}{" 题 "}{starText(stars)}
+          </div>
+          <div className="level-up-reward">
+            {"\uD83D\uDD13 解锁: "}{nextWorld.emoji} {nextWorld.name}
+          </div>
+          <button className="level-up-btn" onClick={onNextWorld}>
+            {"进入 "}{nextWorld.name}{" \u279E"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const icon = stars >= 3 ? "\uD83C\uDF1F" : stars >= 1 ? "\u2B50" : "\uD83D\uDCAA";
 
   return (
     <div className="overlay">
       <div className="level-up-card">
-        <div className="level-up-icon">&#127942;</div>
-        <div className="level-up-title">升级到 Level {level + 1}!</div>
-        <div className="level-up-desc">太棒了! 你已答对 {totalCorrect} 题</div>
-        <div className="level-up-reward">&#11088; 下一关: {nextCfg.desc}</div>
-        <button className="level-up-btn" onClick={onNext}>
-          开始下一关 &#10132;
+        <div className="level-up-icon">{icon}</div>
+        <div className="level-up-title">Level {world}-{level} {"完成!"}</div>
+        <div className="level-up-desc">
+          {"答对 "}{levelCorrect}/{questionsPerLevel}{" 题 "}{starText(stars)}
+        </div>
+        <div className="level-up-reward">
+          {stars >= 3 ? "完美通关!" : stars >= 1 ? "继续加油!" : "多练练会更好哦!"}
+        </div>
+        <button className="level-up-btn" onClick={onNextLevel}>
+          {"下一关 \u279E"}
         </button>
       </div>
     </div>

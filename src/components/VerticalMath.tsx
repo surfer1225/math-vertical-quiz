@@ -1,18 +1,19 @@
 "use client";
 
 import { useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
-import { FeedbackType } from "@/lib/types";
+import { FeedbackType, Op } from "@/lib/types";
 
 interface VerticalMathProps {
   num1: number;
   num2: number;
-  op: "+" | "-";
+  op: Op;
   answer: number;
+  remainder: number;
   answered: boolean;
   feedbackType: FeedbackType;
   showCarry: boolean;
   questionIndex: number;
-  onSubmit: (userAnswer: number | null) => void;
+  onSubmit: (userAnswer: number | null, userRemainder?: number | null) => void;
 }
 
 export interface VerticalMathHandle {
@@ -20,47 +21,54 @@ export interface VerticalMathHandle {
 }
 
 const VerticalMath = forwardRef<VerticalMathHandle, VerticalMathProps>(function VerticalMath(
-  { num1, num2, op, answer, answered, feedbackType, showCarry, questionIndex, onSubmit },
+  { num1, num2, op, answer, remainder, answered, feedbackType, showCarry, questionIndex, onSubmit },
   ref
 ) {
-  const needHundred = answer >= 100;
-  const hundredRef = useRef<HTMLInputElement>(null);
-  const tensRef = useRef<HTMLInputElement>(null);
-  const onesRef = useRef<HTMLInputElement>(null);
+  const answerDigits = String(Math.abs(answer)).length;
+  const inputCount = Math.max(answerDigits, 2);
+
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const remainderRef = useRef<HTMLInputElement>(null);
+
+  const isDivision = op === "÷";
+  const hasRemainder = isDivision && remainder > 0;
 
   useEffect(() => {
-    if (needHundred) {
-      hundredRef.current?.focus();
-    } else {
-      tensRef.current?.focus();
-    }
-  }, [questionIndex, needHundred]);
+    inputRefs.current = inputRefs.current.slice(0, inputCount);
+    setTimeout(() => inputRefs.current[0]?.focus(), 100);
+  }, [questionIndex, inputCount]);
 
   const getVisibleInputs = useCallback(() => {
-    const inputs: HTMLInputElement[] = [];
-    if (needHundred && hundredRef.current) inputs.push(hundredRef.current);
-    if (tensRef.current) inputs.push(tensRef.current);
-    if (onesRef.current) inputs.push(onesRef.current);
-    return inputs;
-  }, [needHundred]);
+    return inputRefs.current.filter((el): el is HTMLInputElement => el !== null);
+  }, []);
 
   const submitAnswer = useCallback(() => {
-    const h = needHundred ? (hundredRef.current?.value || "") : "";
-    const t = tensRef.current?.value || "";
-    const o = onesRef.current?.value || "";
-    const combined = h + t + o;
-    onSubmit(combined ? parseInt(combined, 10) : null);
-  }, [needHundred, onSubmit]);
+    const digits = getVisibleInputs().map(el => el.value);
+    const combined = digits.join("");
+    const userAnswer = combined ? parseInt(combined, 10) : null;
+
+    if (isDivision && hasRemainder) {
+      const remVal = remainderRef.current?.value;
+      const userRem = remVal ? parseInt(remVal, 10) : null;
+      onSubmit(userAnswer, userRem);
+    } else {
+      onSubmit(userAnswer);
+    }
+  }, [getVisibleInputs, onSubmit, isDivision, hasRemainder]);
 
   useImperativeHandle(ref, () => ({ submit: submitAnswer }), [submitAnswer]);
 
-  const handleInput = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    nextRef: React.RefObject<HTMLInputElement | null> | null
-  ) => {
+  const handleInput = (index: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     if (val.length > 1) e.target.value = val.slice(-1);
-    if (val && nextRef?.current) nextRef.current.focus();
+    if (val) {
+      // Move to next input
+      if (index < inputCount - 1) {
+        inputRefs.current[index + 1]?.focus();
+      } else if (isDivision && hasRemainder) {
+        remainderRef.current?.focus();
+      }
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -71,6 +79,9 @@ const VerticalMath = forwardRef<VerticalMathHandle, VerticalMathProps>(function 
     }
 
     const inputs = getVisibleInputs();
+    if (isDivision && hasRemainder && remainderRef.current) {
+      inputs.push(remainderRef.current);
+    }
     const idx = inputs.indexOf(e.target as HTMLInputElement);
     if (idx === -1) return;
 
@@ -88,55 +99,67 @@ const VerticalMath = forwardRef<VerticalMathHandle, VerticalMathProps>(function 
     return `${base} ${feedbackType === "correct" ? "correct" : "wrong"}`;
   };
 
-  const hasCarry = op === "+" && (num1 % 10) + (num2 % 10) >= 10;
+  const opSymbol = op === "+" ? "+" : op === "-" ? "\u2212" : op === "×" ? "\u00D7" : "\u00F7";
+
+  // Carry indicator for addition
+  const hasCarry = op === "+" && showCarry && (num1 % 10) + (num2 % 10) >= 10;
 
   return (
     <div className="vertical-math" onKeyDown={handleKeyDown}>
-      <div className="carry-row">
-        <div className={`carry-digit${showCarry && hasCarry ? " visible" : ""}`}>
-          {showCarry && hasCarry ? "1" : ""}
+      {/* Carry row (addition only) */}
+      {op === "+" && (
+        <div className="carry-row">
+          {Array.from({ length: inputCount }, (_, i) => (
+            <div key={i} className={`carry-digit${i === inputCount - 2 && hasCarry ? " visible" : ""}`}>
+              {i === inputCount - 2 && hasCarry ? "1" : ""}
+            </div>
+          ))}
         </div>
-        <div className="carry-digit" />
-      </div>
+      )}
 
+      {/* First number */}
       <div className="math-row">
         <span className="number">{num1}</span>
       </div>
 
+      {/* Operator + second number */}
       <div className="math-row">
-        <span className="operator">{op === "+" ? "+" : "\u2212"}</span>
+        <span className="operator">{opSymbol}</span>
         <span className="number">{num2}</span>
       </div>
 
+      {/* Divider */}
       <div className="divider" />
 
+      {/* Answer inputs */}
       <div className="answer-row">
-        {needHundred && (
+        {Array.from({ length: inputCount }, (_, i) => (
           <input
-            ref={hundredRef}
+            key={i}
+            ref={(el) => { inputRefs.current[i] = el; }}
             className={inputClass("digit-input")}
             maxLength={1}
             inputMode="numeric"
             disabled={answered}
-            onChange={(e) => handleInput(e, tensRef)}
+            onChange={handleInput(i)}
           />
+        ))}
+
+        {/* Remainder input for division */}
+        {isDivision && (
+          <>
+            <span className="remainder-dots">......</span>
+            <input
+              ref={remainderRef}
+              className={inputClass("digit-input remainder-input")}
+              maxLength={1}
+              inputMode="numeric"
+              disabled={answered}
+              placeholder="余"
+              onChange={() => {}}
+            />
+          </>
         )}
-        <input
-          ref={tensRef}
-          className={inputClass("digit-input")}
-          maxLength={1}
-          inputMode="numeric"
-          disabled={answered}
-          onChange={(e) => handleInput(e, onesRef)}
-        />
-        <input
-          ref={onesRef}
-          className={inputClass("digit-input")}
-          maxLength={1}
-          inputMode="numeric"
-          disabled={answered}
-          onChange={(e) => handleInput(e, null)}
-        />
       </div>
     </div>
   );

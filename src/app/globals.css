@@ -47,6 +47,14 @@ body {
   box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
 }
 
+.world-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-light);
+  margin-top: 4px;
+  text-align: center;
+}
+
 .stats {
   display: flex;
   gap: 16px;
@@ -486,6 +494,25 @@ body {
 @keyframes scorePop {
   0% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-40px); }
+}
+
+/* ===== REMAINDER (DIVISION) ===== */
+.remainder-dots {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--text-light);
+  margin: 0 4px;
+  letter-spacing: -2px;
+}
+
+.remainder-input {
+  width: 52px;
+}
+
+.remainder-input::placeholder {
+  color: var(--primary-light);
+  font-size: 20px;
+  opacity: 0.6;
 }
 
 /* ===== RESPONSIVE ===== */
